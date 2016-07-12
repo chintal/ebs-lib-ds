@@ -1,6 +1,6 @@
 /* 
    Copyright (c)
-     (c) 2013, 2015-2016 Chintalagiri Shashank, Jugnu, Quazar Technologies Pvt.Ltd.
+     (c) 2013, 2015-2016 Chintalagiri Shashank, Quazar Technologies Pvt.Ltd.
      (c) 2009-2011 Chintalagiri Shashank, Jugnu, IIT Kanpur
     
    This file is part of
