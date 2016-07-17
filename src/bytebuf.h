@@ -187,4 +187,44 @@ static inline uint8_t bytebuf_cGetFree(bytebuf * bytebufp){
     return (bytebufp->_size - bytebufp->_population);
 }
 
+/**
+  * \brief Return the number of bytes that can be read contiguously.
+  * You still need to acquire a lock if you want to write into it. 
+  * 
+  * @see bytebuf_cPopChunk()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param *at_rollover Pointer to uint8_t in which to store rollover flag.
+  * @return The number of bytes that can be read contiguously.
+  */
+static inline uint8_t bytebuf_cGetChunkLen(bytebuf * bytebufp, uint8_t * at_rollover);
+
+static inline uint8_t bytebuf_cGetChunkLen(bytebuf * bytebufp, uint8_t * at_rollover){
+    uint8_t pop = bytebufp -> _population;
+    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _outp + 1;
+    if (pop < lend){
+        *at_rollover = 0;
+        return pop;
+    }
+    else{
+        *at_rollover = 1;
+        return lend;
+    }
+    return 0;
+}
+
+/**
+  * \brief Mark the next `n` outbytes as handled. 
+  * This function is intended to be used with DMA or other memcpy 
+  * based functions which read the array in the background. After 
+  * the read is complete, the buffer should be informed via this
+  * function that the read data can be discarded from the buffer.
+  * 
+  * @see bytebuf_cGetChunkLen()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param len The number of bytes that should be popped.
+  * @return The number of bytes actually popped.
+  */
+uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len);
+
+
 #endif

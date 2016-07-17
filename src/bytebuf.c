@@ -175,3 +175,37 @@ uint8_t bytebuf_cPopByte( bytebuf * bytebufp )
     }
     return 0;
 }
+
+uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len){
+    uint8_t pop = bytebufp->_population;
+    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _outp + 1;
+    uint8_t lwrap;
+    if (pop >= len){
+        // There are enough bytes in the buffer to pop.
+        if (len >= lend){
+            // Popping that many bytes needs a rollover
+            lwrap = len - lend;
+            bytebufp -> _outp = bytebufp->_bufp + lwrap;
+        }
+        else{
+            // Popping that many bytes does not need a rollover
+            bytebufp -> _outp += len;
+        }
+        bytebufp -> _population -= len;
+        return len;
+    }
+    else{
+        // There aren't enough bytes in the buffer to pop the requested length.
+        if (pop >= lend){
+        // Popping that many bytes needs a rollover
+            lwrap = pop - lend;
+            bytebufp -> _outp = bytebufp->_bufp + lwrap;
+        }
+        else{
+            // Popping that many bytes does not need a rollover
+            bytebufp -> _outp += pop;
+        }
+        bytebufp -> _population -= pop;
+        return pop;
+    }
+}
