@@ -45,6 +45,8 @@
  * @see bytebuf.c
  */
 
+#ifndef BYTEBUF_H
+#define BYTEBUF_H
 
 #include<stdint.h>
 
@@ -73,13 +75,13 @@
  * actual data. 
  */
 typedef struct {
-    uint8_t * _bufp;            /**< @brief Pointer to the start of the underlying buffer. */
-    uint8_t * _inp;             /**< @brief Pointer to the current write location. */
-    uint8_t * _outp;            /**< @brief Pointer to the current read location. */
-    uint8_t _population;        /**< @brief Number of bytes presently in the buffer. */
-    uint8_t _size;              /**< @brief Size of buffer. */
-    uint8_t _lock;              /**< @brief Token which holds the write lock at present. */
-    uint8_t _locklen;           /**< @brief Number of additional bytes for which the lock is valid. */
+    uint8_t * _bufp;              /**< @brief Pointer to the start of the underlying buffer. */
+    uint8_t * _inp;               /**< @brief Pointer to the current write location. */
+    uint8_t * _outp;              /**< @brief Pointer to the current read location. */
+    volatile uint8_t _population; /**< @brief Number of bytes presently in the buffer. */
+    uint8_t _size;                /**< @brief Size of buffer. */
+    uint8_t _lock;                /**< @brief Token which holds the write lock at present. */
+    uint8_t _locklen;             /**< @brief Number of additional bytes for which the lock is valid. */
 } bytebuf;
 
 /**
@@ -184,3 +186,5 @@ static inline uint8_t bytebuf_cPopulation(bytebuf * bytebufp){
 static inline uint8_t bytebuf_cGetFree(bytebuf * bytebufp){
     return (bytebufp->_size - bytebufp->_population);
 }
+
+#endif
