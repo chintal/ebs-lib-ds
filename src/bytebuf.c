@@ -137,30 +137,27 @@ uint8_t bytebuf_cPush( bytebuf * bytebufp, uint8_t byte, uint8_t token )
     return 0;
 }
 
-uint8_t bytebuf_cPushLen( bytebuf * bytebufp, uint8_t * sp, uint8_t len, uint8_t token )
+uint8_t bytebuf_cPushLen( bytebuf * bytebufp, void* sp, uint8_t len, uint8_t token )
 {
-    if ( bytebufp -> _lock == token && ( (bytebufp -> _locklen) >= len ) )
-    {
-        bytebufp -> _population += len;
-        bytebufp -> _locklen -= len;
-        //Check for buffer boundary.
-        if ( (bytebufp -> _bufp + bytebufp -> _size) <= (bytebufp -> _inp + len)){
-            uint8_t len1 = (bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _inp);
-            memcpy((void *)(bytebufp->_inp), (void *)(sp), len1);
-            uint8_t len2 = len - len1;
-            if (len2) {
-                memcpy((void *)(bytebufp->_bufp), (void *)(sp + len1), (len2));
-            }
-            bytebufp -> _inp = bytebufp -> _bufp + (len2);
+    uint8_t clen = 0;
+    uint8_t past_rollover;
+    if ( bytebufp->_lock == token && ( (bytebufp->_locklen) >= len ) ){
+        clen = bytebuf_cPushChunkLen(bytebufp, &past_rollover);
+        if (len < clen || past_rollover){
+            memcpy((void *)(bytebufp->_inp), sp, len);
+            bytebufp->_inp += len;
         }
-        else {
-            memcpy((void *)(bytebufp -> _inp), (void *)(sp), len);
-            bytebufp -> _inp += len;
+        else{
+            memcpy((void *)(bytebufp->_inp), sp, clen);
+            memcpy((void *)(bytebufp->_bufp), (void *)((uint8_t *)sp + clen), (len - clen));
+            bytebufp->_inp = bytebufp->_bufp + (len - clen);
         }
-        if (!(bytebufp -> _locklen)){
-            bytebufp -> _lock = BYTEBUF_LOCK_OPEN;
+        bytebufp->_population += len;
+        bytebufp->_locklen -= len;
+        if (!(bytebufp->_locklen)){
+            bytebufp->_lock = BYTEBUF_LOCK_OPEN;
         }
-        return 1;
+        return len;
     }
     return 0;
 }
@@ -178,34 +175,39 @@ uint8_t bytebuf_cPopByte( bytebuf * bytebufp )
 
 uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len){
     uint8_t pop = bytebufp->_population;
-    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _outp + 1;
-    uint8_t lwrap;
-    if (pop >= len){
-        // There are enough bytes in the buffer to pop.
-        if (len >= lend){
-            // Popping that many bytes needs a rollover
-            lwrap = len - lend;
-            bytebufp -> _outp = bytebufp->_bufp + lwrap;
-        }
-        else{
-            // Popping that many bytes does not need a rollover
-            bytebufp -> _outp += len;
-        }
-        bytebufp -> _population -= len;
-        return len;
+    uint8_t clen;
+    uint8_t at_rollover;
+    if (pop < len){
+        return 0;
+    }
+    clen = bytebuf_cPopChunkLen(bytebufp, &at_rollover);
+    if (at_rollover){
+        bytebufp->_outp = bytebufp->_bufp + (len - clen);
     }
     else{
-        // There aren't enough bytes in the buffer to pop the requested length.
-        if (pop >= lend){
-        // Popping that many bytes needs a rollover
-            lwrap = pop - lend;
-            bytebufp -> _outp = bytebufp->_bufp + lwrap;
-        }
-        else{
-            // Popping that many bytes does not need a rollover
-            bytebufp -> _outp += pop;
-        }
-        bytebufp -> _population -= pop;
-        return pop;
+        bytebufp->_outp += len;
     }
+    bytebufp->_population -= len;
+    return len;
+}
+
+uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len){
+    uint8_t clen = 0;
+    uint8_t at_rollover;
+    uint8_t pop = bytebufp->_population;
+    if (pop < len){
+        return 0;
+    }
+    clen = bytebuf_cPopChunkLen(bytebufp, &at_rollover);
+    if (at_rollover){
+        memcpy(dp, (void *)(bytebufp->_outp), clen);
+        memcpy((void *)((uint8_t*)dp + clen), (void *)(bytebufp->_bufp), (len - clen));
+        bytebufp->_outp = bytebufp->_bufp + (len - clen);
+    }
+    else{
+        memcpy(dp, (void *)(bytebufp->_outp), len);
+        bytebufp->_outp += len;
+    }
+    bytebufp->_population -= len;
+    return len;
 }
