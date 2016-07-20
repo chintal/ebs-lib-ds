@@ -33,30 +33,6 @@
 #include "bytebuf.h"
 #include<string.h>
 
-static inline void bytebuf_vIncInp( bytebuf * bytebufp ){
-        if (bytebufp -> _inp == bytebufp -> _bufp + bytebufp -> _size)
-        {
-            bytebufp -> _inp = bytebufp -> _bufp;
-        }
-        else
-        {
-            bytebufp -> _inp++;
-        }
-        return;
-}
-
-static inline void bytebuf_vIncOutp( bytebuf * bytebufp ){
-        if(bytebufp -> _outp == bytebufp-> _bufp + bytebufp -> _size)
-        {
-            bytebufp -> _outp = bytebufp -> _bufp;
-        }
-        else
-        {
-            bytebufp -> _outp++;
-        }
-        return;
-}
-
 
 void bytebuf_vInit( uint8_t * bufferp, uint8_t size, bytebuf * bytebufp )
 {
@@ -65,6 +41,7 @@ void bytebuf_vInit( uint8_t * bufferp, uint8_t size, bytebuf * bytebufp )
     bytebuf_vFlush( bytebufp );
     return;
 }
+
 
 void bytebuf_vFlush( bytebuf * bytebufp )
 {
@@ -75,6 +52,7 @@ void bytebuf_vFlush( bytebuf * bytebufp )
     bytebufp -> _locklen = 0;
     return;
 }
+
 
 uint8_t bytebuf_cPushReqLock( bytebuf * bytebufp, uint8_t length, uint8_t token )
 {
@@ -89,6 +67,7 @@ uint8_t bytebuf_cPushReqLock( bytebuf * bytebufp, uint8_t length, uint8_t token 
     }
     return 0; 
 }
+
 
 uint8_t bytebuf_cPushReqBlindLock( bytebuf * bytebufp, uint8_t token )
 {
@@ -106,6 +85,7 @@ uint8_t bytebuf_cPushReqBlindLock( bytebuf * bytebufp, uint8_t token )
     return 0; 
 }
 
+
 uint8_t bytebuf_cPushRelinquishLock(bytebuf * bytebufp, uint8_t token){
     if ( bytebufp -> _lock == token){
         bytebufp -> _lock = BYTEBUF_LOCK_OPEN;
@@ -118,24 +98,33 @@ uint8_t bytebuf_cPushRelinquishLock(bytebuf * bytebufp, uint8_t token){
     return 0;
 }
 
-uint8_t bytebuf_cPush( bytebuf * bytebufp, uint8_t byte, uint8_t token )
+
+uint8_t bytebuf_cPushByte( bytebuf * bytebufp, uint8_t byte, uint8_t token )
 {
-    if ( bytebufp -> _lock == token )
+    if ( bytebufp->_lock == token )
     {
-        *( bytebufp -> _inp ) = byte;
-        bytebuf_vIncInp( bytebufp );
+        *( bytebufp->_inp ) = byte;
+        if ( bytebufp->_inp == bytebufp->_bufp + bytebufp->_size ){
+            bytebufp->_inp = bytebufp->_bufp;
+        }
+        else{
+            bytebufp->_inp++;
+        }
+        
         if (token != BYTEBUF_LOCK_OPEN){
-            bytebufp -> _locklen--;
-            if ( !(bytebufp -> _locklen) )
+            bytebufp->_locklen--;
+            if ( !(bytebufp->_locklen) )
             {
-                bytebufp -> _lock = BYTEBUF_LOCK_OPEN;
+                bytebufp->_lock = BYTEBUF_LOCK_OPEN;
             }
         }
-        bytebufp -> _population++;
+        
+        bytebufp->_population++;
         return 1;
     }
     return 0;
 }
+
 
 uint8_t bytebuf_cPushLen( bytebuf * bytebufp, void* sp, uint8_t len, uint8_t token )
 {
@@ -152,26 +141,54 @@ uint8_t bytebuf_cPushLen( bytebuf * bytebufp, void* sp, uint8_t len, uint8_t tok
             memcpy((void *)(bytebufp->_bufp), (void *)((uint8_t *)sp + clen), (len - clen));
             bytebufp->_inp = bytebufp->_bufp + (len - clen);
         }
-        bytebufp->_population += len;
         bytebufp->_locklen -= len;
         if (!(bytebufp->_locklen)){
             bytebufp->_lock = BYTEBUF_LOCK_OPEN;
         }
+        bytebufp->_population += len;
         return len;
     }
     return 0;
 }
 
+
 uint8_t bytebuf_cPopByte( bytebuf * bytebufp )
 {
     if (bytebufp -> _population){
         uint8_t rval = *(bytebufp -> _outp);
-        bytebuf_vIncOutp(bytebufp);
+        if(bytebufp->_outp == bytebufp->_bufp + bytebufp->_size){
+            bytebufp->_outp = bytebufp->_bufp;
+        }
+        else{
+            bytebufp->_outp++;
+        }
         bytebufp->_population--;
         return rval;
     }
     return 0;
 }
+
+
+uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len){
+    uint8_t clen = 0;
+    uint8_t at_rollover;
+    if (bytebufp->_population >= len){
+        clen = bytebuf_cPopChunkLen(bytebufp, &at_rollover);
+        if (len <= clen){
+            memcpy(dp, (void *)(bytebufp->_outp), len);
+            bytebufp->_outp += len;
+        }
+        else{
+            memcpy(dp, (void *)(bytebufp->_outp), clen);
+            memcpy((void *)((uint8_t*)dp + clen), (void *)(bytebufp->_bufp), (len - clen));
+            bytebufp->_outp = bytebufp->_bufp + (len - clen);
+        }
+        bytebufp->_population -= len;
+        return len;    
+    }
+    return 0;
+}
+
 
 uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len){
     uint8_t pop = bytebufp->_population;
@@ -185,27 +202,6 @@ uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len){
         bytebufp->_outp = bytebufp->_bufp + (len - clen);
     }
     else{
-        bytebufp->_outp += len;
-    }
-    bytebufp->_population -= len;
-    return len;
-}
-
-uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len){
-    uint8_t clen = 0;
-    uint8_t at_rollover;
-    uint8_t pop = bytebufp->_population;
-    if (pop < len){
-        return 0;
-    }
-    clen = bytebuf_cPopChunkLen(bytebufp, &at_rollover);
-    if (at_rollover){
-        memcpy(dp, (void *)(bytebufp->_outp), clen);
-        memcpy((void *)((uint8_t*)dp + clen), (void *)(bytebufp->_bufp), (len - clen));
-        bytebufp->_outp = bytebufp->_bufp + (len - clen);
-    }
-    else{
-        memcpy(dp, (void *)(bytebufp->_outp), len);
         bytebufp->_outp += len;
     }
     bytebufp->_population -= len;

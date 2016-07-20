@@ -101,6 +101,84 @@ void bytebuf_vInit(uint8_t * bufferp, uint8_t size, bytebuf * bytebufp);
   */
 void bytebuf_vFlush(bytebuf * bytebufp);
 
+
+/**
+  * Return the number of bytes present in the buffer to be read.
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @return The number of bytes left in the buffer to be read.
+  */
+static inline uint8_t bytebuf_cPopulation(bytebuf * bytebufp);
+
+static inline uint8_t bytebuf_cPopulation(bytebuf * bytebufp){
+    return (bytebufp->_population);
+}
+
+
+/**
+  * Return the number of bytes that can be written into the buffer right now.
+  * You still need to acquire a lock if you want to write into it. 
+  * @see bytebuf_cPushReqLock()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @return The number of empty bytes left in the buffer.
+  */
+static inline uint8_t bytebuf_cGetFree(bytebuf * bytebufp);
+    
+static inline uint8_t bytebuf_cGetFree(bytebuf * bytebufp){
+    return (bytebufp->_size - bytebufp->_population);
+}
+
+
+/**
+  * \brief Return the number of bytes that can be written contiguously.
+  * You still need to acquire a lock if you want to write into it. 
+  * 
+  * @see bytebuf_cPushChunk()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param *at_rollover Pointer to uint8_t in which to store rollover flag.
+  * @return The number of bytes that can be written contiguously.
+  */
+static inline uint8_t bytebuf_cPushChunkLen(bytebuf * bytebufp, uint8_t * past_rollover);
+
+static inline uint8_t bytebuf_cPushChunkLen(bytebuf * bytebufp, uint8_t * past_rollover){
+    uint8_t free = bytebufp->_size - bytebufp->_population;
+    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _inp + 1;
+    if (free < lend){
+        *past_rollover = 1;
+        return free;
+    }
+    else{
+        *past_rollover = 0;
+        return lend;
+    }
+    return 0;
+}
+
+
+/**
+  * \brief Return the number of bytes that can be read contiguously.
+  * 
+  * @see bytebuf_cPopChunk()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param *at_rollover Pointer to uint8_t in which to store rollover flag.
+  * @return The number of bytes that can be read contiguously.
+  */
+static inline uint8_t bytebuf_cPopChunkLen(bytebuf * bytebufp, uint8_t * at_rollover);
+
+static inline uint8_t bytebuf_cPopChunkLen(bytebuf * bytebufp, uint8_t * at_rollover){
+    uint8_t pop = bytebufp -> _population;
+    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _outp + 1;
+    if (pop < lend){
+        *at_rollover = 0;
+        return pop;
+    }
+    else{
+        *at_rollover = 1;
+        return lend;
+    }
+    return 0;
+}
+
+
 /** 
   * Request a write lock on a bytebuf for a specific length.
   * Actual writing is done using other functions. 
@@ -143,7 +221,7 @@ uint8_t bytebuf_cPushRelinquishLock(bytebuf * bytebufp, uint8_t token);
   * @param token Identifier against which you own the lock.
   * @return 0 for failed write, 1 for successful write.
   */
-uint8_t bytebuf_cPush(bytebuf * bytebufp, uint8_t byte, uint8_t token);
+uint8_t bytebuf_cPushByte(bytebuf * bytebufp, uint8_t byte, uint8_t token);
 
 /**
   * Push a length of data into a bytebuf. 
@@ -157,6 +235,7 @@ uint8_t bytebuf_cPush(bytebuf * bytebufp, uint8_t byte, uint8_t token);
   */
 uint8_t bytebuf_cPushLen(bytebuf * bytebufp, void* sp, uint8_t len, uint8_t token);
 
+
 /**
   * Pop a byte from the bytebuf. 
   * You should make sure that there actually is a byte to be read first.
@@ -167,89 +246,6 @@ uint8_t bytebuf_cPushLen(bytebuf * bytebufp, void* sp, uint8_t len, uint8_t toke
   */
 uint8_t bytebuf_cPopByte(bytebuf * bytebufp);
 
-/**
-  * Return the number of bytes present in the buffer to be read.
-  * @param *bytebufp Pointer to the bytebuf structure.
-  * @return The number of bytes left in the buffer to be read.
-  */
-static inline uint8_t bytebuf_cPopulation(bytebuf * bytebufp){
-    return (bytebufp->_population);
-}
-
-/**
-  * Return the number of bytes that can be written into the buffer right now.
-  * You still need to acquire a lock if you want to write into it. 
-  * @see bytebuf_cPushReqLock()
-  * @param *bytebufp Pointer to the bytebuf structure.
-  * @return The number of empty bytes left in the buffer.
-  */
-static inline uint8_t bytebuf_cGetFree(bytebuf * bytebufp){
-    return (bytebufp->_size - bytebufp->_population);
-}
-
-/**
-  * \brief Return the number of bytes that can be written contiguously.
-  * You still need to acquire a lock if you want to write into it. 
-  * 
-  * @see bytebuf_cPushChunk()
-  * @param *bytebufp Pointer to the bytebuf structure.
-  * @param *at_rollover Pointer to uint8_t in which to store rollover flag.
-  * @return The number of bytes that can be written contiguously.
-  */
-static inline uint8_t bytebuf_cPushChunkLen(bytebuf * bytebufp, uint8_t * past_rollover);
-
-static inline uint8_t bytebuf_cPushChunkLen(bytebuf * bytebufp, uint8_t * past_rollover){
-    uint8_t free = bytebufp->_size - bytebufp->_population;
-    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _inp + 1;
-    if (free < lend){
-        *past_rollover = 1;
-        return free;
-    }
-    else{
-        *past_rollover = 0;
-        return lend;
-    }
-    return 0;
-}
-
-/**
-  * \brief Return the number of bytes that can be read contiguously.
-  * 
-  * @see bytebuf_cPopChunk()
-  * @param *bytebufp Pointer to the bytebuf structure.
-  * @param *at_rollover Pointer to uint8_t in which to store rollover flag.
-  * @return The number of bytes that can be read contiguously.
-  */
-static inline uint8_t bytebuf_cPopChunkLen(bytebuf * bytebufp, uint8_t * at_rollover);
-
-static inline uint8_t bytebuf_cPopChunkLen(bytebuf * bytebufp, uint8_t * at_rollover){
-    uint8_t pop = bytebufp -> _population;
-    uint8_t lend = bytebufp -> _bufp + bytebufp -> _size - bytebufp -> _outp + 1;
-    if (pop < lend){
-        *at_rollover = 0;
-        return pop;
-    }
-    else{
-        *at_rollover = 1;
-        return lend;
-    }
-    return 0;
-}
-
-/**
-  * \brief Mark the next `n` outbytes as handled. 
-  * This function is intended to be used with DMA or other memcpy 
-  * based functions which read the array in the background. After 
-  * the read is complete, the buffer should be informed via this
-  * function that the read data can be discarded from the buffer.
-  * ,
-  * @see bytebuf_cPopChunkLen()
-  * @param *bytebufp Pointer to the bytebuf structure.
-  * @param len The number of bytes that should be popped.
-  * @return 0 if insufficient bytes to pop, the number of bytes popped 
-  *         otherwise.
-  */
-uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len);
 
 /**
   * Pop a length of data from a bytebuf using the platform's memcpy 
@@ -264,6 +260,22 @@ uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len);
   * @return 0 for failed read, 1 for successful read.
   */
 uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len);
+
+
+/**
+  * \brief Mark the next `n` outbytes as handled. 
+  * This function is intended to be used with DMA or other functions 
+  * which read the array in the background. After the read is complete, 
+  * the buffer should be informed via this function that the read data 
+  * can be discarded from the buffer.
+  * ,
+  * @see bytebuf_cPopChunkLen()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param len The number of bytes that should be popped.
+  * @return 0 if insufficient bytes to pop, the number of bytes popped 
+  *         otherwise.
+  */
+uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len);
 
 
 #endif
