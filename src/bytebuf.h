@@ -212,6 +212,18 @@ uint8_t bytebuf_cPushReqBlindLock(bytebuf * bytebufp, uint8_t token);
   */
 uint8_t bytebuf_cPushRelinquishLock(bytebuf * bytebufp, uint8_t token);
 
+
+/**
+  * Write a single byte into the bytebuf, clobbering the oldest
+  * value in the buffer if there isn't room. Locking isn't used.
+  *
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param byte Byte to be written in.
+  * @return 0 for failed write, 1 for successful write.
+  */
+uint8_t bytebuf_cWriteByte(bytebuf * bytebufp, uint8_t byte);
+
+
 /**
   * Push a single byte into the bytebuf.
   * You should already hold the write lock to do this.
@@ -261,6 +273,20 @@ uint8_t bytebuf_cPopByte(bytebuf * bytebufp);
   */
 uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len);
 
+
+/**
+  * Copy a length of data from a bytebuf using the platform's memcpy 
+  * function. 
+  * 
+  * You should ensure that that number of bytes actually exists in the 
+  * buffer to be read.
+  * @see bytebuf_cPopulation()
+  * @param *bytebufp Pointer to the bytebuf structure.
+  * @param *dp Pointer to the destination buffer.
+  * @param len Number of bytes to copy.
+  * @return 0 for failed read, 1 for successful copy.
+  */
+uint8_t bytebuf_cCopyLen(bytebuf * bytebufp, void* dp, uint8_t len);
 
 /**
   * \brief Mark the next `n` outbytes as handled. 

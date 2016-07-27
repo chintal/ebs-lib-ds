@@ -99,6 +99,32 @@ uint8_t bytebuf_cPushRelinquishLock(bytebuf * bytebufp, uint8_t token){
 }
 
 
+uint8_t bytebuf_cWriteByte( bytebuf * bytebufp, uint8_t byte )
+{
+    if (!bytebuf_cGetFree(bytebufp)){
+        if(bytebufp->_outp == bytebufp->_bufp + bytebufp->_size){
+            bytebufp->_outp = bytebufp->_bufp;
+        }
+        else{
+            bytebufp->_outp++;
+        }
+    }
+    else{
+        bytebufp->_population++;
+    }
+    
+    *( bytebufp->_inp ) = byte;
+    
+    if ( bytebufp->_inp == bytebufp->_bufp + bytebufp->_size ){
+        bytebufp->_inp = bytebufp->_bufp;
+    }
+    else{
+        bytebufp->_inp++;
+    }
+    return 1;
+}
+
+
 uint8_t bytebuf_cPushByte( bytebuf * bytebufp, uint8_t byte, uint8_t token )
 {
     if ( bytebufp->_lock == token )
@@ -184,6 +210,24 @@ uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len){
             bytebufp->_outp = bytebufp->_bufp + (len - clen);
         }
         bytebufp->_population -= len;
+        return len;    
+    }
+    return 0;
+}
+
+
+uint8_t bytebuf_cCopyLen(bytebuf * bytebufp, void* dp, uint8_t len){
+    uint8_t clen = 0;
+    uint8_t at_rollover;
+    if (bytebufp->_population >= len){
+        clen = bytebuf_cPopChunkLen(bytebufp, &at_rollover);
+        if (len <= clen){
+            memcpy(dp, (void *)(bytebufp->_outp), len);
+        }
+        else{
+            memcpy(dp, (void *)(bytebufp->_outp), clen);
+            memcpy((void *)((uint8_t*)dp + clen), (void *)(bytebufp->_bufp), (len - clen));
+        }
         return len;    
     }
     return 0;
