@@ -74,7 +74,7 @@
  * a byte array which should be separately created and contains the 
  * actual data. 
  */
-typedef struct {
+typedef struct BYTEBUF{
     uint8_t * _bufp;              /**< @brief Pointer to the start of the underlying buffer. */
     uint8_t * _inp;               /**< @brief Pointer to the current write location. */
     uint8_t * _outp;              /**< @brief Pointer to the current read location. */
