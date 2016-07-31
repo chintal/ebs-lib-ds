@@ -1,0 +1,7 @@
+
+msp430
+host
+*.kdev4
+*.cache
+*.idea
+__pycache__
