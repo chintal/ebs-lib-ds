@@ -136,14 +136,14 @@ static avlt_node_t * _node_balance(avlt_node_t * node){
     
     if(bf >= 2){
         /* Left Heavy */    
-        if( _node_balance_factor(node->left) <= -1) 
+        if(_node_balance_factor(node->left) <= -1) 
             newroot = _node_rotate_leftright(node);
         else 
             newroot = _node_rotate_leftleft(node);
     } 
     else if(bf <= -2){
         /* Right Heavy */
-        if( _node_balance_factor(node->right) >= 1)
+        if(_node_balance_factor(node->right) >= 1)
             newroot = _node_rotate_rightleft(node);
         else 
             newroot = _node_rotate_rightright(node);
