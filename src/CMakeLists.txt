@@ -1,22 +1,30 @@
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 CMAKE_POLICY(SET CMP0007 NEW)
 
-PROJECT(ds C)
-SET(PROJECT_VERSION 1.0.0.0)
+SET(LIBRARY_NAME    ds)
 
-SET(TMP_PROJECT_DESCRIPTION 
-    "Basic implementations of standard data structures for use in embedded systems"
-    CACHE STRING "Project Description")
+PROJECT(${LIBRARY_NAME} C)
 
-FILE(GLOB SOURCES *.c)
+SET(PROJECT_DESCRIPTION     "Basic implementations of reusable data structures for use in embedded systems")
+SET(PROJECT_AUTHOR_NAME     "Chintalagiri Shashank")
+SET(PROJECT_AUTHOR_EMAIL    "shashank.chintalagiri@gmail.com")
+SET(PROJECT_LICENSE         "GPLv3")
+SET(PROJECT_VERSION_MAJOR   1)
+SET(PROJECT_VERSION_MINOR   1)
+SET(PROJECT_VERSION_PATCH   0)
+SET(PROJECT_VERSION_TWEAK   0)
+
+INCLUDE(ebs/lib-conf)
+
+FILE(GLOB_RECURSE SOURCES *.c)
 FILE(GLOB_RECURSE HEADERS *.h)
 
-# This is a cross-platform build, and therefore is assumed to be intended for an 
-# embedded target.
-SET(CMAKE_INSTALL_PREFIX ${PLATFORM_PACKAGES_PATH})
-SET(PUBLIC_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-                
 ADD_PLATFORM_LIBRARY(ds STATIC "" ${SOURCES})
-INSTALL_PLATFORM_LIBRARY(ds ${HEADERS})
+
+IF(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+    INSTALL_PLATFORM_LIBRARY(ds ${HEADERS})
+    INCLUDE(ebs/lib-doc)
+ENDIF()
     
