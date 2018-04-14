@@ -30,6 +30,18 @@
 
 #include "hamming.h"
 
+#ifndef SWIG
+#include <ucdm/descriptor.h>
+
+/** @brief Hamming Library Version Descriptor */
+static descriptor_custom_t hamming_descriptor = {NULL, DESCRIPTOR_TAG_LIBVERSION, 
+    sizeof(HAMMING_VERSION), DESCRIPTOR_ACCTYPE_PTR, {HAMMING_VERSION}};
+
+void hamming_install_descriptor(void)
+{
+    descriptor_install(&hamming_descriptor);
+}
+#endif
 
 uint16_t pack_hamming11_5(uint8_t* raw){
     return(0);
@@ -100,7 +112,7 @@ uint16_t check_hamming11_5(uint16_t data){
     return(data);
 }
 
-#ifdef HAMMING_ITER_IMPL
+#if HAMMING_IMPL == HAMMING_IMPL_ITER
 uint32_t pack_hamming26_6(uint8_t* data){
     // The first part is as good as its going to get. 
     // The parity generation can be improved.
@@ -195,7 +207,7 @@ uint32_t pack_hamming26_6(uint8_t* data){
 }
 #endif
 
-#ifdef HAMMING_MATR_IMPL
+#if HAMMING_IMPL == HAMMING_IMPL_MATRIX
 uint32_t pack_hamming26_6(uint8_t * data){
     uint32_t result, cmask;
     uint32_t p1data, p2data, p4data, p8data, p16data;
@@ -260,7 +272,7 @@ uint32_t pack_hamming26_6(uint8_t * data){
 }
 #endif
 
-#ifdef HAMMING_ITER_IMPL
+#if HAMMING_IMPL == HAMMING_IMPL_ITER
 uint32_t check_hamming26_6(uint32_t data, uint8_t* result){
     //This function needs optimization. It should work as is, but it will be dicey.  
     uint8_t syndrome=0x00; 
@@ -338,7 +350,7 @@ uint32_t check_hamming26_6(uint32_t data, uint8_t* result){
 }
 #endif
 
-#ifdef HAMMING_MATR_IMPL
+#if HAMMING_IMPL == HAMMING_IMPL_MATRIX
 uint32_t check_hamming26_6(uint32_t data, uint8_t* result){
     
     uint8_t syndrome=0x00; 

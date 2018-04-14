@@ -1,15 +1,23 @@
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 CMAKE_POLICY(SET CMP0007 NEW)
 
-PROJECT(hamming C)
-SET(hamming_VERSION_MAJOR 1)
-SET(hamming_VERSION_MINOR 0)
-SET(hamming_VERSION_PATCH 0)
-SET(hamming_VERSION_TWEAK 0)
+SET(LIBRARY_NAME    hamming)
 
-SET(TMP_PROJECT_DESCRIPTION "Hamming code pack and unpack functions for embedded systems"
-        CACHE STRING "Project Description")
+PROJECT(${LIBRARY_NAME} C)
+
+SET(PROJECT_DESCRIPTION     "Hamming code pack and unpack functions for embedded systems")
+SET(PROJECT_AUTHOR_NAME     "Chintalagiri Shashank")
+SET(PROJECT_AUTHOR_EMAIL    "shashank.chintalagiri@gmail.com")
+SET(PROJECT_LICENSE         "GPLv3")
+SET(PROJECT_VERSION_MAJOR   1)
+SET(PROJECT_VERSION_MINOR   1)
+SET(PROJECT_VERSION_PATCH   0)
+SET(PROJECT_VERSION_TWEAK   0)
+
+LIST(APPEND CMAKE_MODULE_PATH "/home/chintal/code/toolchains")
+SET(HAMMING_IMPL   HAMMING_IMPL_ITER)
+INCLUDE(ebs/lib-conf)
 
 FILE(GLOB SOURCES *.c)
 FILE(GLOB_RECURSE HEADERS *.h)
@@ -17,11 +25,12 @@ FILE(GLOB_RECURSE HEADERS *.h)
 IF(CMAKE_TOOLCHAIN_FILE)
     # This is a cross-platform build, and therefore is assumed to be intended for an 
     # embedded target.
-    SET(CMAKE_INSTALL_PREFIX ${PLATFORM_PACKAGES_PATH})
-    SET(PUBLIC_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-	    	    
-    ADD_PLATFORM_LIBRARY(hamming STATIC "" ${SOURCES})
-    INSTALL_PLATFORM_LIBRARY(hamming ${HEADERS})
+    FIND_PACKAGE("ucdm" REQUIRED)
+    ADD_PLATFORM_LIBRARY(hamming STATIC "ucdm" ${SOURCES})
+    IF(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+        INSTALL_PLATFORM_LIBRARY(hamming ${HEADERS})
+        INCLUDE(ebs/lib-doc)
+    ENDIF()
     
 ELSE(CMAKE_TOOLCHAIN_FILE)
     # This is a native build, and is assumed to be intended for the host. 
@@ -37,8 +46,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
     INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSWIG")
     SET(CMAKE_SWIG_FLAGS "")
-    SWIG_ADD_MODULE(hamming python hamming.i hamming.c)
+    SWIG_ADD_LIBRARY(hamming LANGUAGE python SOURCES hamming.i hamming.c)
     SWIG_LINK_LIBRARIES(hamming ${PYTHON_LIBRARIES})
     
     # Install PYTHON bindings
