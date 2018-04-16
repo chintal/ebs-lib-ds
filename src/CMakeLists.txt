@@ -15,8 +15,11 @@ SET(PROJECT_VERSION_MINOR   1)
 SET(PROJECT_VERSION_PATCH   0)
 SET(PROJECT_VERSION_TWEAK   0)
 
-LIST(APPEND CMAKE_MODULE_PATH "/home/chintal/code/toolchains")
+SET(TOOLCHAINS_PATH         "/home/chintal/code/toolchains") 
+LIST(APPEND CMAKE_MODULE_PATH ${TOOLCHAINS_PATH})
+
 SET(HAMMING_IMPL   HAMMING_IMPL_ITER)
+
 INCLUDE(ebs/lib-conf)
 
 FILE(GLOB SOURCES *.c)
@@ -39,22 +42,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     # NOTE: C library is not compiled separately and is not installed.
     
     # Create PYTHON bindings
-    FIND_PACKAGE(SWIG REQUIRED)
-    INCLUDE(${SWIG_USE_FILE})
-    
-    FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
-    FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
-    INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSWIG")
-    SET(CMAKE_SWIG_FLAGS "")
-    SWIG_ADD_LIBRARY(hamming LANGUAGE python SOURCES hamming.i hamming.c)
-    SWIG_LINK_LIBRARIES(hamming ${PYTHON_LIBRARIES})
-    
-    # Install PYTHON bindings
-    EXECUTE_PROCESS(COMMAND python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()" 
-                    OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
-    INSTALL(TARGETS _hamming DESTINATION ${PYTHON_SITE_PACKAGES})
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/hamming.py DESTINATION ${PYTHON_SITE_PACKAGES})
+    SET(SWIG_SOURCES hamming.i hamming.c)
+    INCLUDE(ebs/swig-python)
     
 ENDIF(CMAKE_TOOLCHAIN_FILE)
