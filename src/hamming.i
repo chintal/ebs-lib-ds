@@ -9,7 +9,7 @@
  %}
  
  %include "carrays.i"
-%array_class(uint8_t, buffer);
+ %array_class(uint8_t, buffer);
  
  /* Parse the header file to generate wrappers */
  %include "config.h"
