@@ -31,7 +31,7 @@
  */
 
 #include "bytebuf.h"
-#include<string.h>
+#include <string.h>
 
 
 void bytebuf_vInit( uint8_t * bufferp, uint8_t size, bytebuf * bytebufp )
