@@ -9,4 +9,8 @@
 #define DS_VERSION_TWEAK "@PROJECT_VERSION_TWEAK@"
 #define DS_VERSION       "ds @PROJECT_VERSION@"
 
+#define HAMMING_IMPL_ITER     0
+#define HAMMING_IMPL_MATRIX   1
+#define HAMMING_IMPL          @HAMMING_IMPL@
+
 #endif

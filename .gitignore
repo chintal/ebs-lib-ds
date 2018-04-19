@@ -1,4 +1,7 @@
 avr
 msp430
 *.kdev4
-
+host
+*.cache
+*.idea
+__pycache__
