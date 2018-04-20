@@ -1,6 +1,6 @@
 /* 
    Copyright (c)
-     (c) 2015-2016 Chintalagiri Shashank, Quazar Technologies Pvt. Ltd.
+     (c) 2018 Chintalagiri Shashank, Quazar Technologies Pvt. Ltd.
    
    This file is part of
    Embedded bootstraps : data structures library
