@@ -20,27 +20,35 @@
 */
 
 /**
- * @file sllist.c
- * @brief Implementation of the Sorted Linked List
+ * @file fifoq.c
+ * @brief Implementation of a generic FIFO queue.
  * 
- * @see sllist.h
+ * @see fifoq.h
  */
 
-#ifndef DS_SLLIST_H
-#define DS_SLLIST_H
+#ifndef DS_FIFOQ_H
+#define DS_FIFOQ_H
 
 #include<stdint.h>
 
-#define SLLIST_TAG_t    int8_t
+
+typedef struct _FIFOQ_ITEM_STUB_t{
+    struct _FIFOQ_ITEM_STUB_t * next;
+}_fifoq_item_stub_t;
 
 
-typedef struct _SLLIST_NODE_STUB_t{
-    struct _SLLIST_NODE_STUB_t * next;
-    const SLLIST_TAG_t tag;
-}_sllist_node_stub_t;
+typedef struct FIFOQ_t{
+    struct _FIFOQ_ITEM_STUB_t * first;
+    struct _FIFOQ_ITEM_STUB_t * last;
+}fifoq_t;
 
 
-void sllist_install(_sllist_node_stub_t ** root, _sllist_node_stub_t * node);
-_sllist_node_stub_t * sllist_find(_sllist_node_stub_t ** root, uint8_t tag);
+void fifoq_init(fifoq_t * queue);
+void fifoq_item_init(_fifoq_item_stub_t item);
+void fifoq_enqueue(fifoq_t * queue, _fifoq_item_stub_t * item);
+void fifoq_enqueue_priority(fifoq_t * queue, _fifoq_item_stub_t * item);
+void fifoq_cancel(fifoq_t * queue, _fifoq_item_stub_t * item);
+_fifoq_item_stub_t * fifoq_pop_next(fifoq_t * queue);
 
 #endif
+
