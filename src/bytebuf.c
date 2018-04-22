@@ -31,7 +31,6 @@
  */
 
 #include "bytebuf.h"
-#include <platform/cpu.h>
 #include <string.h>
 
 
@@ -111,9 +110,7 @@ uint8_t bytebuf_cWriteByte( bytebuf * bytebufp, uint8_t byte )
         }
     }
     else{
-        critical_enter();
         bytebufp->_population++;
-        critical_exit();
     }
     
     *( bytebufp->_inp ) = byte;
@@ -147,9 +144,7 @@ uint8_t bytebuf_cPushByte( bytebuf * bytebufp, uint8_t byte, uint8_t token )
                 bytebufp->_lock = BYTEBUF_LOCK_OPEN;
             }
         }
-        critical_enter();
         bytebufp->_population++;
-        critical_exit();
         return 1;
     }
     return 0;
@@ -175,9 +170,7 @@ uint8_t bytebuf_cPushLen( bytebuf * bytebufp, void* sp, uint8_t len, uint8_t tok
         if (!(bytebufp->_locklen)){
             bytebufp->_lock = BYTEBUF_LOCK_OPEN;
         }
-        critical_enter();
         bytebufp->_population += len;
-        critical_exit();
         return len;
     }
     return 0;
@@ -194,9 +187,7 @@ uint8_t bytebuf_cPopByte( bytebuf * bytebufp )
         else{
             bytebufp->_outp++;
         }
-        critical_enter();
         bytebufp->_population--;
-        critical_exit();
         return rval;
     }
     return 0;
@@ -217,9 +208,7 @@ uint8_t bytebuf_cPopLen(bytebuf * bytebufp, void* dp, uint8_t len){
             memcpy((void *)((uint8_t*)dp + clen), (void *)(bytebufp->_bufp), (len - clen));
             bytebufp->_outp = bytebufp->_bufp + (len - clen);
         }
-        critical_enter();
         bytebufp->_population -= len;
-        critical_exit();
         return len;    
     }
     return 0;
@@ -258,8 +247,6 @@ uint8_t bytebuf_cPopChunk(bytebuf * bytebufp, uint8_t len){
     else{
         bytebufp->_outp += len;
     }
-    critical_enter();
     bytebufp->_population -= len;
-    critical_exit();
     return len;
 }
